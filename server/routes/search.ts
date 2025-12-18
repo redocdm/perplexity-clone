@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { performSearch } from '../services/searchService.js';
 import { rerankResults, validateResults } from '../services/retrievalService.js';
+import { checkResponseQuality } from '../services/qualityService.js';
 import { logger } from '../utils/logger.js';
 import type { SearchResponse } from '../types.js';
 
@@ -46,6 +47,33 @@ router.post('/search', async (req, res) => {
         console.error('Search error:', error);
         res.status(500).json({
             error: 'Search failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
+
+/**
+ * POST /api/quality/check
+ * Check response quality based on citations and sources
+ */
+router.post('/quality/check', async (req, res) => {
+    try {
+        const { responseText, sources } = req.body;
+
+        if (!responseText || typeof responseText !== 'string') {
+            return res.status(400).json({ error: 'responseText is required' });
+        }
+
+        if (!Array.isArray(sources)) {
+            return res.status(400).json({ error: 'sources must be an array' });
+        }
+
+        const qualityCheck = checkResponseQuality(responseText, sources);
+        res.json(qualityCheck);
+    } catch (error) {
+        console.error('Quality check error:', error);
+        res.status(500).json({
+            error: 'Quality check failed',
             message: error instanceof Error ? error.message : 'Unknown error',
         });
     }

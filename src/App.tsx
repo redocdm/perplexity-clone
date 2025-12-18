@@ -69,6 +69,8 @@ function App() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [sources, setSources] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [scrollToSourceIndex, setScrollToSourceIndex] = useState<number | undefined>(undefined);
+  const [qualityWarning, setQualityWarning] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new content arrives
@@ -126,10 +128,46 @@ function App() {
           onComplete: async (fullText) => {
             const llmDuration = Date.now() - llmStartTime;
             
-            // Quality check: Ensure citations are present
-            const hasCitations = /\[\d+\]/.test(fullText);
-            if (!hasCitations && searchResponse.results.length > 0) {
-              console.warn('Response missing citations');
+            // Quality check: Call backend quality service
+            try {
+              const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+              const qualityResponse = await fetch(`${apiUrl}/api/quality/check`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  responseText: fullText,
+                  sources: searchResponse.results,
+                }),
+              });
+
+              if (qualityResponse.ok) {
+                const qualityCheck = await qualityResponse.json();
+                if (!qualityCheck.isValid && qualityCheck.issues.length > 0) {
+                  setQualityWarning(qualityCheck.issues[0]); // Show first issue
+                } else {
+                  setQualityWarning(null);
+                }
+
+                await sendTelemetry('llm_completed', {
+                  query,
+                  duration: llmDuration,
+                  metadata: {
+                    hasCitations: /\[\d+\]/.test(fullText),
+                    sourceCount: searchResponse.results.length,
+                    responseLength: fullText.length,
+                    qualityScore: qualityCheck.score,
+                    citationCoverage: qualityCheck.citationCoverage,
+                    citationValidity: qualityCheck.citationValidity,
+                  },
+                });
+              }
+            } catch (err) {
+              console.warn('Quality check failed:', err);
+              // Fallback to basic check
+              const hasCitations = /\[\d+\]/.test(fullText);
+              if (!hasCitations && searchResponse.results.length > 0) {
+                setQualityWarning('Response may lack proper citations');
+              }
             }
 
             // Add assistant message to history
@@ -137,16 +175,6 @@ function App() {
             setMessages(prev => [...prev, assistantMessage]);
             setStreamingContent('');
             setIsStreaming(false);
-
-            await sendTelemetry('llm_completed', {
-              query,
-              duration: llmDuration,
-              metadata: {
-                hasCitations,
-                sourceCount: searchResponse.results.length,
-                responseLength: fullText.length,
-              },
-            });
 
             // Generate follow-up suggestions
             setIsLoadingSuggestions(true);
@@ -184,6 +212,15 @@ function App() {
 
   const handleFollowUpSelect = (suggestion: string) => {
     handleSearch(suggestion);
+  };
+
+  const handleCitationClick = (sourceIndex: number) => {
+    // Validate index is within bounds
+    if (sourceIndex >= 0 && sourceIndex < sources.length) {
+      setScrollToSourceIndex(sourceIndex);
+      // Reset after a short delay to allow re-triggering
+      setTimeout(() => setScrollToSourceIndex(undefined), 1000);
+    }
   };
 
   const hasMessages = messages.length > 0 || isStreaming;
@@ -225,11 +262,24 @@ function App() {
           // Results state - messages with fixed bottom input
           <>
             <div className="results-section" ref={resultsRef}>
-              {/* Source carousel - shows search results */}
-              <SourceCarousel
-                sources={sources}
-                isLoading={isSearching}
-              />
+              {/* Quality warning */}
+              {qualityWarning && (
+                <div className="quality-warning">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span>{qualityWarning}</span>
+                  <button 
+                    className="quality-warning__dismiss"
+                    onClick={() => setQualityWarning(null)}
+                    aria-label="Dismiss warning"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
 
               <ResultsArea
                 messages={messages}
@@ -237,6 +287,7 @@ function App() {
                 isStreaming={isStreaming}
                 error={error}
                 sources={sources}
+                onCitationClick={handleCitationClick}
               />
 
               {/* Follow-up suggestions after AI response */}

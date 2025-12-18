@@ -1,21 +1,43 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { SearchResult } from '../services/searchService';
 import { initCitationTooltips } from '../utils/citationTooltips';
+import { CitationsList } from './CitationsList';
 
 interface MarkdownWithCitationsProps {
     content: string;
     sources?: SearchResult[];
+    onCitationClick?: (sourceIndex: number) => void;
 }
 
 /**
- * Component that renders markdown and replaces citation patterns [1], [2] with interactive citation spans
- * Uses post-processing to replace citations after ReactMarkdown renders
+ * Extract citation numbers from text (e.g., [1], [2], [1][2])
  */
-export function MarkdownWithCitations({ content, sources }: MarkdownWithCitationsProps) {
+function extractCitations(text: string): number[] {
+    const citationRegex = /\[(\d+)\]/g;
+    const citations: number[] = [];
+    let match;
+
+    while ((match = citationRegex.exec(text)) !== null) {
+        const num = parseInt(match[1], 10);
+        if (!citations.includes(num)) {
+            citations.push(num);
+        }
+    }
+
+    return citations.sort((a, b) => a - b);
+}
+
+/**
+ * Component that renders markdown with inline citations and collapsible list at end
+ */
+export function MarkdownWithCitations({ content, sources, onCitationClick }: MarkdownWithCitationsProps) {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Process citations after markdown renders
+    // Extract citations for the list
+    const citations = useMemo(() => extractCitations(content), [content]);
+
+    // Process inline citations after markdown renders
     useEffect(() => {
         if (!containerRef.current || !sources || sources.length === 0) {
             return;
@@ -97,12 +119,19 @@ export function MarkdownWithCitations({ content, sources }: MarkdownWithCitation
         });
 
         // Initialize tooltips after citations are created
-        initCitationTooltips(container);
-    }, [content, sources]);
+        initCitationTooltips(container, onCitationClick);
+    }, [content, sources, onCitationClick]);
 
     return (
         <div ref={containerRef} className="markdown-with-citations">
             <ReactMarkdown>{content}</ReactMarkdown>
+            {sources && citations.length > 0 && (
+                <CitationsList
+                    citations={citations}
+                    sources={sources}
+                    onCitationClick={onCitationClick}
+                />
+            )}
         </div>
     );
 }

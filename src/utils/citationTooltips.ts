@@ -1,20 +1,35 @@
 /**
  * Initialize citation tooltips for dynamically rendered citations
  * Call this after content is rendered to make citations interactive
+ * Fixed to prevent duplicate tooltips
  */
-export function initCitationTooltips(container: HTMLElement) {
+export function initCitationTooltips(
+    container: HTMLElement,
+    onCitationClick?: (citationIndex: number) => void
+) {
+    // Clean up any existing tooltips first
+    const existingTooltips = container.querySelectorAll('.citation-tooltip');
+    existingTooltips.forEach(tooltip => tooltip.remove());
+
+    // Reset initialization flags
+    const allCitations = container.querySelectorAll('.citation');
+    allCitations.forEach(citation => {
+        (citation as HTMLElement).dataset.tooltipInitialized = 'false';
+    });
+
     const citations = container.querySelectorAll('.citation[data-source-title]');
     
     citations.forEach((citation) => {
-        // Skip if already initialized
-        if ((citation as HTMLElement).dataset.tooltipInitialized === 'true') {
+        const citationEl = citation as HTMLElement;
+        
+        // Skip if already initialized (double check)
+        if (citationEl.dataset.tooltipInitialized === 'true') {
             return;
         }
 
-        const citationEl = citation as HTMLElement;
         citationEl.dataset.tooltipInitialized = 'true';
 
-        // Create tooltip element
+        // Create tooltip element (only one per citation)
         const tooltip = document.createElement('div');
         tooltip.className = 'citation-tooltip';
         
@@ -34,18 +49,42 @@ export function initCitationTooltips(container: HTMLElement) {
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="citation-tooltip__link">View source →</a>
         `;
 
+        // Append tooltip (only one will exist)
         citationEl.appendChild(tooltip);
 
-        // Handle hover
-        citationEl.addEventListener('mouseenter', () => {
+        // Handle hover - show only this tooltip
+        const showTooltip = () => {
+            // Hide all other tooltips first
+            container.querySelectorAll('.citation-tooltip').forEach(t => {
+                (t as HTMLElement).style.opacity = '0';
+                (t as HTMLElement).style.pointerEvents = 'none';
+            });
+            // Show this one
             tooltip.style.opacity = '1';
             tooltip.style.pointerEvents = 'auto';
-        });
+        };
 
-        citationEl.addEventListener('mouseleave', () => {
+        const hideTooltip = () => {
             tooltip.style.opacity = '0';
             tooltip.style.pointerEvents = 'none';
-        });
+        };
+
+        citationEl.addEventListener('mouseenter', showTooltip);
+        citationEl.addEventListener('mouseleave', hideTooltip);
+
+        // Handle click to scroll to source
+        if (onCitationClick) {
+            citationEl.style.cursor = 'pointer';
+            citationEl.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const citationIndex = parseInt(citationEl.dataset.citationIndex || '0', 10);
+                const sourceIndex = citationIndex - 1; // Convert to 0-indexed
+                if (sourceIndex >= 0) {
+                    onCitationClick(sourceIndex);
+                }
+            });
+        }
     });
 }
 

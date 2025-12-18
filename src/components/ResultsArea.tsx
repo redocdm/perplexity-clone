@@ -8,6 +8,7 @@ interface ResultsAreaProps {
     isStreaming: boolean;
     error: string | null;
     sources?: SearchResult[];
+    onCitationClick?: (sourceIndex: number) => void;
 }
 
 // AI Avatar icon
@@ -30,7 +31,7 @@ const ErrorIcon = () => (
 );
 
 
-export function ResultsArea({ messages, streamingContent, isStreaming, error, sources }: ResultsAreaProps) {
+export function ResultsArea({ messages, streamingContent, isStreaming, error, sources, onCitationClick }: ResultsAreaProps) {
     if (error) {
         return (
             <div className="error-message">
@@ -59,7 +60,11 @@ export function ResultsArea({ messages, streamingContent, isStreaming, error, so
                     </div>
                     <div className="answer-card__content">
                         {message.role === 'assistant' ? (
-                            <MarkdownWithCitations content={message.content} sources={sources} />
+                            <MarkdownWithCitations 
+                                content={message.content} 
+                                sources={sources}
+                                onCitationClick={onCitationClick}
+                            />
                         ) : (
                             <MarkdownWithCitations content={message.content} />
                         )}
@@ -82,7 +87,11 @@ export function ResultsArea({ messages, streamingContent, isStreaming, error, so
                         </div>
                     </div>
                     <div className="answer-card__content">
-                        <MarkdownWithCitations content={streamingContent} sources={sources} />
+                        <MarkdownWithCitations 
+                            content={streamingContent} 
+                            sources={sources}
+                            onCitationClick={onCitationClick}
+                        />
                         {streamingContent && <span className="cursor-blink"></span>}
                     </div>
                 </div>

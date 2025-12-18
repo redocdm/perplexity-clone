@@ -8,12 +8,13 @@
 - Auto follow-up suggestions after responses.
 - Basic error/loading states.
 
-## Phase 2 – Retrieval & Quality
-- Add backend proxy for search APIs (hide keys, handle CORS, rate limits).
-- Introduce retrieval/grounding (re-rank results, extractive snippets).
-- Inline citation rendering tied to source indices; hover to preview snippet.
-- Response quality guardrails (hallucination checks, source coverage prompts).
-- Logging/telemetry of queries, latencies, and failures.
+## Phase 2 – Retrieval & Quality ✅ Done
+- ✅ Add backend proxy for search APIs (hide keys, handle CORS, rate limits).
+- ✅ Introduce retrieval/grounding (re-rank results, extractive snippets).
+- ✅ Inline citation rendering tied to source indices; hover to preview snippet.
+- ✅ Collapsible citations list at end of responses with source favicons.
+- ✅ Response quality guardrails (citation validation, source coverage checks, quality scoring).
+- ✅ Logging/telemetry of queries, latencies, and failures.
 
 ## Phase 3 – Conversations & Accounts
 - Persistent conversations (save/reload threads).

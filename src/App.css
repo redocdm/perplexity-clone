@@ -705,11 +705,17 @@
   vertical-align: super;
   transition: all var(--transition-fast);
   position: relative;
+  user-select: none;
 }
 
 .citation:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
   background: var(--accent-primary-hover);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.citation:active {
+  transform: scale(1.05);
 }
 
 .citation--missing {
@@ -813,6 +819,172 @@
 }
 
 /* ========================================
+   Citations List (Collapsible)
+   ======================================== */
+
+.citations-list {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+.citations-list__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  gap: var(--spacing-sm);
+}
+
+.citations-list__favicons {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-right: var(--spacing-xs);
+}
+
+.citations-list__favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--bg-secondary);
+  background: var(--bg-secondary);
+  position: relative;
+  margin-left: -6px;
+}
+
+.citations-list__favicon:first-child {
+  margin-left: 0;
+}
+
+.citations-list__toggle:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.citations-list__toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--transition-fast);
+}
+
+.citations-list__count {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.citations-list__content {
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  animation: slideUp var(--transition-slow) forwards;
+}
+
+.citations-list__item {
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.citations-list__item:hover {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.citations-list__item-header {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.citations-list__item-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-gradient);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+
+.citations-list__item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.citations-list__item-domain {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.citations-list__item-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.citations-list__item-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.citations-list__item-snippet {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.citations-list__item-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--accent-primary);
+  text-decoration: none;
+  margin-top: var(--spacing-xs);
+  transition: color var(--transition-fast);
+}
+
+.citations-list__item-link:hover {
+  text-decoration: underline;
+  color: var(--accent-primary-hover);
+}
+
+/* ========================================
    Error State
    ======================================== */
 
@@ -831,6 +1003,53 @@
   flex-shrink: 0;
   width: 20px;
   height: 20px;
+}
+
+/* ========================================
+   Quality Warning
+   ======================================== */
+
+.quality-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-lg);
+  color: #f59e0b;
+  font-size: var(--font-size-sm);
+  animation: slideUp var(--transition-slow) forwards;
+}
+
+.quality-warning svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.quality-warning span {
+  flex: 1;
+}
+
+.quality-warning__dismiss {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.quality-warning__dismiss:hover {
+  background: rgba(251, 191, 36, 0.2);
 }
 
 /* ========================================

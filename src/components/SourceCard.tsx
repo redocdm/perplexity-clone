@@ -4,6 +4,7 @@ interface SourceCardProps {
     source: SearchResult;
     index: number;
     onClick?: () => void;
+    dataSourceIndex?: number;
 }
 
 // External link icon
@@ -15,7 +16,7 @@ const ExternalLinkIcon = () => (
     </svg>
 );
 
-export function SourceCard({ source, index, onClick }: SourceCardProps) {
+export function SourceCard({ source, index, onClick, dataSourceIndex }: SourceCardProps) {
     const handleClick = () => {
         if (onClick) {
             onClick();
@@ -25,7 +26,13 @@ export function SourceCard({ source, index, onClick }: SourceCardProps) {
     };
 
     return (
-        <div className="source-card" onClick={handleClick} role="button" tabIndex={0}>
+        <div 
+            className="source-card" 
+            onClick={handleClick} 
+            role="button" 
+            tabIndex={0}
+            data-source-index={dataSourceIndex !== undefined ? dataSourceIndex : index}
+        >
             <div className="source-card__number">{index + 1}</div>
             <div className="source-card__content">
                 <div className="source-card__header">

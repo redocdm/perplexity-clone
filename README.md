@@ -15,8 +15,9 @@ AI-powered search & chat experience built with React, TypeScript, Vite, and Expr
 ### Phase 2 (Retrieval & Quality) ✅
 - **Backend API proxy** - Express server with search API proxy, rate limiting, and CORS.
 - **Retrieval & grounding** - Re-ranking of search results by relevance, evidence extraction.
-- **Inline citation rendering** - Interactive citations with hover tooltips showing source previews.
-- **Quality guardrails** - Source validation, citation coverage checks, response quality monitoring.
+- **Inline citation rendering** - Interactive citations `[1]`, `[2]` with hover tooltips showing source previews.
+- **Collapsible citations list** - Expandable sources section at end of responses with favicons in header.
+- **Quality guardrails** - Citation validation, source coverage checks, quality scoring, and warning UI.
 - **Telemetry & logging** - Comprehensive logging of queries, latencies, failures, and performance metrics.
 
 ## How it works
@@ -40,9 +41,10 @@ AI-powered search & chat experience built with React, TypeScript, Vite, and Expr
 - `src/services/searchService.ts`: Backend API client with fallback to direct calls.
 - `src/services/geminiService.ts`: Gemini client, streaming + follow-up generation.
 - `src/components/ResultsArea.tsx`: Message rendering with citation support.
-- `src/components/MarkdownWithCitations.tsx`: Markdown renderer with citation processing.
+- `src/components/MarkdownWithCitations.tsx`: Markdown renderer with inline citation processing.
+- `src/components/CitationsList.tsx`: Collapsible citations list component with favicons.
 - `src/components/Citation.tsx`: Citation component with hover tooltips.
-- `src/utils/citationTooltips.ts`: Citation tooltip initialization utility.
+- `src/utils/citationTooltips.ts`: Citation tooltip initialization utility (prevents duplicates).
 
 ### Backend
 - `server/index.ts`: Express server setup, middleware, routing.
@@ -50,6 +52,7 @@ AI-powered search & chat experience built with React, TypeScript, Vite, and Expr
 - `server/routes/telemetry.ts`: Telemetry logging endpoint.
 - `server/services/searchService.ts`: Search API clients (Brave/SerpAPI/mock).
 - `server/services/retrievalService.ts`: Re-ranking, evidence extraction, quality validation.
+- `server/services/qualityService.ts`: Response quality checks, citation validation, coverage scoring.
 - `server/utils/logger.ts`: Telemetry and logging utility.
 
 ## Running locally

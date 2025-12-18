@@ -29,7 +29,13 @@ const GlobeIcon = () => (
     </svg>
 );
 
-export function SourceCarousel({ sources, isLoading }: SourceCarouselProps) {
+interface SourceCarouselProps {
+    sources: SearchResult[];
+    isLoading?: boolean;
+    scrollToIndex?: number; // New prop for scrolling to a specific source
+}
+
+export function SourceCarousel({ sources, isLoading, scrollToIndex }: SourceCarouselProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -50,6 +56,16 @@ export function SourceCarousel({ sources, isLoading }: SourceCarouselProps) {
             return () => ref.removeEventListener('scroll', updateScrollButtons);
         }
     }, [sources]);
+
+    // Scroll to specific source when scrollToIndex changes
+    useEffect(() => {
+        if (scrollToIndex !== undefined && scrollRef.current && sources.length > 0) {
+            const sourceCard = scrollRef.current.children[scrollToIndex] as HTMLElement;
+            if (sourceCard) {
+                sourceCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [scrollToIndex, sources.length]);
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
@@ -107,7 +123,12 @@ export function SourceCarousel({ sources, isLoading }: SourceCarouselProps) {
 
                 <div className="source-carousel__scroll" ref={scrollRef}>
                     {sources.map((source, index) => (
-                        <SourceCard key={source.id} source={source} index={index} />
+                        <SourceCard 
+                            key={source.id} 
+                            source={source} 
+                            index={index}
+                            dataSourceIndex={index}
+                        />
                     ))}
                 </div>
 
