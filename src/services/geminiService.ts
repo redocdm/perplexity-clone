@@ -22,28 +22,60 @@ const getGeminiClient = () => {
     return new GoogleGenerativeAI(apiKey);
 };
 
-// System prompt for the AI assistant
-const SYSTEM_PROMPT = `You are a helpful AI research assistant, similar to Perplexity AI. Your role is to:
+/**
+ * Build system prompt based on conversation settings
+ */
+function buildSystemPrompt(settings?: {
+    tone?: 'casual' | 'professional' | 'technical';
+    depth?: 'brief' | 'detailed' | 'comprehensive';
+    citationStrictness?: 'relaxed' | 'standard' | 'strict';
+}): string {
+    const tone = settings?.tone || 'professional';
+    const depth = settings?.depth || 'detailed';
+    const citationStrictness = settings?.citationStrictness || 'standard';
+
+    const toneInstructions = {
+        casual: 'Use a friendly, conversational tone. Be approachable and easy to understand.',
+        professional: 'Use a formal, business-appropriate tone. Be clear and respectful.',
+        technical: 'Use precise, jargon-rich language. Assume technical knowledge when appropriate.',
+    };
+
+    const depthInstructions = {
+        brief: 'Provide short, concise answers. Focus on key points only.',
+        detailed: 'Provide moderate detail with context. Include relevant examples when helpful.',
+        comprehensive: 'Provide in-depth explanations with examples, context, and supporting details.',
+    };
+
+    const citationInstructions = {
+        relaxed: 'Include citations when helpful, but don\'t require them for every statement.',
+        standard: 'Include citations for factual claims and important information. Balance citation coverage.',
+        strict: 'Require citations for all factual claims. Every statement should be backed by a source.',
+    };
+
+    return `You are a helpful AI research assistant, similar to Perplexity AI. Your role is to:
 
 1. Provide accurate, well-researched answers to questions
 2. Structure your responses clearly with headings, bullet points, and formatting when appropriate
-3. Be concise but comprehensive
-4. Acknowledge when you're uncertain about something
-5. Use markdown formatting for better readability
+3. ${depthInstructions[depth]}
+4. ${toneInstructions[tone]}
+5. Acknowledge when you're uncertain about something
+6. Use markdown formatting for better readability
 
 When answering:
 - Start with a direct answer to the question
 - Provide supporting details and context
 - Use bullet points for lists
 - Use code blocks for any code examples
-- Be helpful and conversational
+- Be helpful and ${tone}
 
 IMPORTANT: When web search results are provided, you MUST:
 - Use the information from the search results to inform your answer
 - Add inline citations using the format [1], [2], etc. that correspond to the source numbers
 - Place citations immediately after the relevant information
 - If multiple sources support a statement, cite them all: [1][2]
-- Only cite sources that are actually provided in the context`;
+- Only cite sources that are actually provided in the context
+- Citation requirement: ${citationInstructions[citationStrictness]}`;
+}
 
 /**
  * Generate a streaming response from Gemini
@@ -52,16 +84,23 @@ export async function generateStreamingResponse(
     query: string,
     conversationHistory: Message[],
     callbacks: StreamCallbacks,
-    searchContext?: string
+    searchContext?: string,
+    settings?: {
+        tone?: 'casual' | 'professional' | 'technical';
+        depth?: 'brief' | 'detailed' | 'comprehensive';
+        citationStrictness?: 'relaxed' | 'standard' | 'strict';
+    }
 ): Promise<void> {
     try {
         await sendTelemetry('llm_started', { query, metadata: { hasSearchContext: !!searchContext } });
         const startTime = Date.now();
 
+        const systemPrompt = buildSystemPrompt(settings);
+
         const genAI = getGeminiClient();
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-flash',
-            systemInstruction: SYSTEM_PROMPT,
+            systemInstruction: systemPrompt,
         });
 
         // Build conversation history for context

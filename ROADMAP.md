@@ -15,16 +15,21 @@
 - ✅ Collapsible citations list at end of responses with source favicons.
 - ✅ Response quality guardrails (citation validation, source coverage checks, quality scoring).
 - ✅ Logging/telemetry of queries, latencies, and failures.
+- ✅ Long-query–tolerant result filtering and mock-result detection (domain blacklist, URL/snippet quality scoring, user-facing mock-result warnings).
 
-## Phase 3 – Conversations & Accounts
-- Persistent conversations (save/reload threads).
+## Phase 3 – Conversations & Accounts ✅ Done
+- ✅ Persistent conversations (save/reload threads).
 - User auth (OAuth/provider); per-user rate limits and usage caps.
-- Conversation settings: tone, depth, citation strictness.
-- Share links to conversations; copy/export responses.
+- ✅ Conversation settings: tone, depth, citation strictness.
+- ✅ Share links to conversations; copy/export responses.
 
-## Phase 4 – Advanced Query Experiences
-- Multi-turn intent detection and query rewriting.
-- Multi-hop/complex answering: plan-and-execute with multiple searches.
+## Phase 4 – Advanced Query Experiences ✅ Done
+- ✅ Query complexity analysis and automatic agent mode detection.
+- ✅ Multi-hop/complex answering: plan-and-execute with multiple searches.
+- ✅ Task planning and sequential search execution.
+- ✅ Agent mode UI with thinking indicators, “Agent” badge, and live progress.
+- ✅ Collapsible Agent Thinking panel with per-step search queries, result previews, and completion status.
+- ✅ Streaming agent event log (thinking/progress/tool calls) rendered beneath the active answer.
 - Structured outputs (tables, lists, timelines) and follow-up drill-down.
 - Image support (render images from results; accept image inputs if model allows).
 

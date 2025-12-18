@@ -24,7 +24,7 @@ router.post('/search', async (req, res) => {
         // Perform search
         const searchResponse: SearchResponse = await performSearch(trimmedQuery);
 
-        // Re-rank results for better relevance
+        // Re-rank results for better relevance (includes quality filtering)
         const rerankedResults = rerankResults(searchResponse.results, trimmedQuery);
         searchResponse.results = rerankedResults;
 
@@ -37,6 +37,19 @@ router.post('/search', async (req, res) => {
                 query: trimmedQuery,
                 metadata: {
                     qualityIssues: validation.issues,
+                    resultCount: searchResponse.results.length,
+                    isMockSearch: searchResponse.isMockSearch,
+                },
+            });
+        }
+
+        // Log if mock search was used
+        if (searchResponse.isMockSearch) {
+            logger.log({
+                type: 'search_succeeded',
+                query: trimmedQuery,
+                metadata: {
+                    warning: 'Mock search results used - configure API keys for real results',
                     resultCount: searchResponse.results.length,
                 },
             });

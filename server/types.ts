@@ -17,6 +17,7 @@ export interface SearchResponse {
     query: string;
     searchTime?: number; // Time taken in ms
     engine?: string; // Which engine was used
+    isMockSearch?: boolean; // Flag to indicate if mock data was used
 }
 
 export interface TelemetryEvent {

@@ -1,6 +1,7 @@
 import type { Message } from '../services/geminiService';
 import type { SearchResult } from '../services/searchService';
 import { MarkdownWithCitations } from './MarkdownWithCitations';
+import { AgentThinkingPanel, type AgentStep } from './AgentThinkingPanel';
 
 interface ResultsAreaProps {
     messages: Message[];
@@ -9,6 +10,11 @@ interface ResultsAreaProps {
     error: string | null;
     sources?: SearchResult[];
     onCitationClick?: (sourceIndex: number) => void;
+    isAgentMode?: boolean;
+    agentThinking?: string | null;
+    agentProgress?: string | null;
+    agentSteps?: AgentStep[];
+    agentEvents?: string[];
 }
 
 // AI Avatar icon
@@ -31,7 +37,7 @@ const ErrorIcon = () => (
 );
 
 
-export function ResultsArea({ messages, streamingContent, isStreaming, error, sources, onCitationClick }: ResultsAreaProps) {
+export function ResultsArea({ messages, streamingContent, isStreaming, error, sources, onCitationClick, isAgentMode, agentThinking, agentProgress, agentSteps, agentEvents }: ResultsAreaProps) {
     if (error) {
         return (
             <div className="error-message">
@@ -72,12 +78,49 @@ export function ResultsArea({ messages, streamingContent, isStreaming, error, so
                 </div>
             ))}
 
+            {/* Agent Thinking Panel */}
+            {isAgentMode && agentSteps && agentSteps.length > 0 && (
+                <AgentThinkingPanel steps={agentSteps} isExpanded={isStreaming} />
+            )}
+
+            {/* Agent mode indicators */}
+            {isStreaming && isAgentMode && (
+                <div className="agent-status">
+                    {agentThinking && (
+                        <div className="agent-status__thinking">
+                            <div className="agent-status__icon">🤔</div>
+                            <span>{agentThinking}</span>
+                        </div>
+                    )}
+                    {agentProgress && (
+                        <div className="agent-status__progress">
+                            <div className="agent-status__icon">⚙️</div>
+                            <span>{agentProgress}</span>
+                        </div>
+                    )}
+                    {agentEvents && agentEvents.length > 0 && (
+                        <div className="agent-status__log">
+                            {agentEvents.map((event, idx) => (
+                                <div key={idx} className="agent-status__log-line">
+                                    {event}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Streaming response */}
             {isStreaming && (
                 <div className="answer-card">
                     <div className="answer-card__header">
                         <AIAvatar />
                         <span className="answer-card__label">AI Assistant</span>
+                        {isAgentMode && (
+                            <span className="agent-badge" title="Agent Mode: Multi-step reasoning enabled">
+                                Agent
+                            </span>
+                        )}
                         <div className="loading-indicator">
                             <div className="loading-dots">
                                 <span className="loading-dot"></span>

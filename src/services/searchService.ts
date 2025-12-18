@@ -17,6 +17,7 @@ export interface SearchResponse {
     query: string;
     searchTime?: number;
     engine?: string;
+    isMockSearch?: boolean; // Flag to indicate if mock data was used
 }
 
 /**

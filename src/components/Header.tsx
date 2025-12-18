@@ -1,6 +1,9 @@
 interface HeaderProps {
     theme: 'light' | 'dark';
     onToggleTheme: () => void;
+    onOpenConversations?: () => void;
+    onOpenSettings?: () => void;
+    onNewConversation?: () => void;
 }
 
 // Sun icon for light mode
@@ -25,7 +28,31 @@ const MoonIcon = () => (
     </svg>
 );
 
-export function Header({ theme, onToggleTheme }: HeaderProps) {
+// History icon
+const HistoryIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+    </svg>
+);
+
+// Settings icon
+const SettingsIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
+    </svg>
+);
+
+// Plus icon for new conversation
+const PlusIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+);
+
+export function Header({ theme, onToggleTheme, onOpenConversations, onOpenSettings, onNewConversation }: HeaderProps) {
     return (
         <header className="header">
             <div className="header__logo">
@@ -34,6 +61,36 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
             </div>
 
             <div className="header__actions">
+                {onNewConversation && (
+                    <button
+                        className="header__action-button"
+                        onClick={onNewConversation}
+                        aria-label="New conversation"
+                        title="New conversation"
+                    >
+                        <PlusIcon />
+                    </button>
+                )}
+                {onOpenConversations && (
+                    <button
+                        className="header__action-button"
+                        onClick={onOpenConversations}
+                        aria-label="Open conversations"
+                        title="Conversation history"
+                    >
+                        <HistoryIcon />
+                    </button>
+                )}
+                {onOpenSettings && (
+                    <button
+                        className="header__action-button"
+                        onClick={onOpenSettings}
+                        aria-label="Open settings"
+                        title="Conversation settings"
+                    >
+                        <SettingsIcon />
+                    </button>
+                )}
                 <button
                     className="theme-toggle"
                     onClick={onToggleTheme}

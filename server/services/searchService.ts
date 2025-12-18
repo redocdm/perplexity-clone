@@ -21,6 +21,83 @@ function getFaviconUrl(domain: string): string {
 }
 
 /**
+ * Build a concise search query from the full user query.
+ *
+ * Goals:
+ * - Preserve the user's core intent (topic, constraints, timeframe).
+ * - Stay within typical web search query length limits (~100-120 chars).
+ * - Avoid blind truncation by preferring key terms over filler words.
+ *
+ * This is a heuristic, non-LLM summarizer that can later be upgraded to use an LLM.
+ */
+function buildSearchQuery(originalQuery: string): string {
+    const trimmed = originalQuery.trim();
+    if (trimmed.length <= 120) {
+        return trimmed;
+    }
+
+    // Basic tokenization
+    const words = trimmed.split(/\s+/);
+
+    // Common English stopwords to de-emphasize
+    const STOPWORDS = new Set([
+        'the', 'a', 'an', 'and', 'or', 'but',
+        'of', 'for', 'to', 'in', 'on', 'at', 'by', 'with',
+        'about', 'into', 'through', 'over', 'between',
+        'is', 'are', 'was', 'were', 'be', 'being', 'been',
+        'how', 'what', 'when', 'where', 'why', 'which', 'who',
+        'would', 'could', 'should', 'can', 'will', 'do', 'does', 'did',
+        'that', 'this', 'these', 'those',
+        'within', 'without', 'then', 'than',
+    ]);
+
+    // Keep non-stopwords and moderately long words first
+    const importantWords: string[] = [];
+    for (const w of words) {
+        const lower = w.toLowerCase();
+        const isStopword = STOPWORDS.has(lower);
+        if (!isStopword || w.length > 6) {
+            importantWords.push(w);
+        }
+    }
+
+    // Fallback if everything got filtered out
+    const baseWords = importantWords.length > 0 ? importantWords : words;
+
+    // Take the first N words that keep us under ~110-120 chars
+    const maxChars = 110;
+    const selected: string[] = [];
+    let lengthSoFar = 0;
+
+    for (const w of baseWords) {
+        const extra = selected.length === 0 ? w.length : w.length + 1; // +1 for space
+        if (lengthSoFar + extra > maxChars) {
+            break;
+        }
+        selected.push(w);
+        lengthSoFar += extra;
+    }
+
+    let condensed = selected.join(' ').trim();
+
+    // Final hard safety: if still too long, truncate at a word boundary
+    if (condensed.length > 120) {
+        const cut = condensed.slice(0, 120);
+        const lastSpace = cut.lastIndexOf(' ');
+        condensed = (lastSpace > 60 ? cut.slice(0, lastSpace) : cut).trim();
+    }
+
+    // As a last resort, if we somehow ended up empty, return a safe slice of the original
+    if (!condensed) {
+        const fallbackCut = trimmed.slice(0, 120);
+        const lastSpace = fallbackCut.lastIndexOf(' ');
+        return (lastSpace > 60 ? fallbackCut.slice(0, lastSpace) : fallbackCut).trim();
+    }
+
+    return condensed;
+}
+
+/**
  * Search using Brave Search API
  */
 export async function searchWithBrave(query: string): Promise<SearchResponse> {
@@ -81,6 +158,7 @@ export async function searchWithBrave(query: string): Promise<SearchResponse> {
             query,
             searchTime: duration,
             engine: 'brave',
+            isMockSearch: false,
         };
     } catch (error) {
         const duration = Date.now() - startTime;
@@ -153,6 +231,7 @@ export async function searchWithSerpAPI(query: string): Promise<SearchResponse> 
             query,
             searchTime: duration,
             engine: 'serpapi',
+            isMockSearch: false,
         };
     } catch (error) {
         const duration = Date.now() - startTime;
@@ -215,6 +294,7 @@ export function mockSearch(query: string): SearchResponse {
         query,
         searchTime: 50,
         engine: 'mock',
+        isMockSearch: true, // Flag that this is mock data
     };
 }
 
@@ -224,24 +304,64 @@ export function mockSearch(query: string): SearchResponse {
 export async function performSearch(query: string): Promise<SearchResponse> {
     logger.log({ type: 'search_started', query });
 
+    // Build a condensed search query for external engines, while preserving
+    // the original user query for logging and answer generation.
+    const searchQuery = buildSearchQuery(query);
+    if (searchQuery !== query) {
+        console.log('[Search] Condensed query for web search:', {
+            originalLength: query.length,
+            condensedLength: searchQuery.length,
+            condensed: searchQuery,
+        });
+    }
+
     // Try Brave first (more generous free tier), then SerpAPI, finally mock
     if (process.env.BRAVE_SEARCH_KEY) {
         try {
-            return await searchWithBrave(query);
+            const result = await searchWithBrave(searchQuery);
+            console.log('[Search] Brave search succeeded:', {
+                resultCount: result.results.length,
+                engineQuery: result.query,
+            });
+
+            // Preserve the original user query in the response we return to the caller
+            return { ...result, query };
         } catch (error) {
-            console.error('Brave search failed, trying SerpAPI:', error);
+            console.error('[Search] Brave search failed, trying SerpAPI:', error);
         }
+    } else {
+        console.warn('[Search] BRAVE_SEARCH_KEY not found in environment');
     }
 
     if (process.env.SERPAPI_KEY) {
         try {
-            return await searchWithSerpAPI(query);
+            const result = await searchWithSerpAPI(searchQuery);
+            console.log('[Search] SerpAPI search succeeded:', {
+                resultCount: result.results.length,
+                engineQuery: result.query,
+            });
+
+            // Preserve the original user query in the response
+            return { ...result, query };
         } catch (error) {
-            console.error('SerpAPI search failed, using mock:', error);
+            console.error('[Search] SerpAPI search failed, using mock:', error);
         }
+    } else {
+        console.warn('[Search] SERPAPI_KEY not found in environment');
     }
 
     // Fallback to mock for development
-    return mockSearch(query);
+    console.warn('[Search] Falling back to mock search - no working API keys');
+    const mockResponse = mockSearch(query);
+    logger.log({
+        type: 'search_succeeded',
+        query,
+        metadata: {
+            engine: 'mock',
+            resultCount: mockResponse.results.length,
+            warning: 'Using mock search results - no API keys configured or all APIs failed',
+        },
+    });
+    return mockResponse;
 }
 
